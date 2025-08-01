@@ -1,0 +1,198 @@
+{
+  "name": "Testa cambio versione",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -976,
+        -336
+      ],
+      "id": "c626cff5-1bde-483c-aa88-3a4280aac7b6",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "const puppeteer = require('puppeteer');\n\n// Leggi l'input dal nodo precedente (rimuovi eventuali spazi nel nome della chiave)\nconst url = $input.first().json[\"startingUrl \"]  || 'https://default-url.it';\nconst versionePrevista=$input.first().json.versionePrevista;\n\n// 1) Se non esiste ancora, lancio Chromium e lo memorizzo in global.browser\n//nei nodi successivi questa parte di creazione non serve\nif (!global.browser) {\n  global.browser = await puppeteer.launch({\n    executablePath: '/usr/bin/chromium-browser',\n    headless: true,\n    args: ['--no-sandbox', '--disable-setuid-sandbox'],\n  });\n}\n\n// 2) Creo la variabile locale browser per uniformità con i nodi “Run” e “Close”\nconst browser = global.browser;\n\npage = await browser.newPage();\n\n// 1) Carico la pagina e aspetto \"network idle\"\nawait page.goto(url, {\n  waitUntil: 'networkidle0',\n  timeout: 60000\n});\n\n// 2) Aspetto che nel body compaia il pattern Vx.y.z\nawait page.waitForFunction(\n  () => /V\\d+\\.\\d+\\.\\d+/.test(document.body.innerText),\n  { timeout: 60000 }\n);\n\n// 3) Estraggo la versione con un unico evaluate che usa document.evaluate()\nconst versioneTrovata = await page.evaluate(() => {\n  const xpath = \"//p[contains(text(),'V') and contains(text(),'.')]\";\n  const node = document\n    .evaluate(\n      xpath,\n      document,\n      null,\n      XPathResult.FIRST_ORDERED_NODE_TYPE,\n      null\n    )\n    .singleNodeValue;\n  return node ? node.textContent.trim() : 'Versione non trovata';\n});\n\nawait browser.close(); //questo non sarà da fare quando si eseguiranno gli altri nodi\n\n// 6) Ritorna il risultato confrontando con la versione prevista\nreturn [\n  {\n    json: {\n      url,\n      versionePrevista,\n      versioneTrovata: versioneTrovata || 'Versione non trovata',\n      isVersioneCorretta: versionePrevista === versioneTrovata,\n    },\n  },\n]\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        -336
+      ],
+      "id": "0b701627-a8d5-4399-8b79-2ab5ee119612",
+      "name": "Controllo cambio versione"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1de3f90a-9304-4e51-8114-55ff2841ffbd",
+              "name": "startingUrl ",
+              "value": "https://servizi.anticorruzione.it/RicercaAttestazioniWebApp/",
+              "type": "string"
+            },
+            {
+              "id": "df044210-df5b-469d-8178-2db1ee01fa7f",
+              "name": "versionePrevista",
+              "value": "V1.0.44",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -768,
+        -336
+      ],
+      "id": "b59a0f61-b2f9-4b3e-a2f8-ef3d069e94e7",
+      "name": "Impostazioni variabili applicazione"
+    },
+    {
+      "parameters": {
+        "fromEmail": "dev@visionova.it",
+        "toEmail": "webmaster@visionova.it",
+        "subject": "Alert programma CQOP estrazione lead",
+        "emailFormat": "text",
+        "text": "La versione del sito https://servizi.anticorruzione.it/  è cambiata.\nVerificare che funzioni ancora",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -64,
+        -320
+      ],
+      "id": "ecd2b597-b912-4025-9b1c-0db53e710d87",
+      "name": "Send email",
+      "webhookId": "22b3412d-e98e-412c-90ce-c846f75ef055",
+      "credentials": {
+        "smtp": {
+          "id": "ex7wvHAzhysSwHdx",
+          "name": "SMTP AuthSmtp"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "55306cef-fd85-4361-a65c-87fee21c95ec",
+              "leftValue": "={{ $json.isVersioneCorretta }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -368,
+        -336
+      ],
+      "id": "7481c357-5432-4d48-932a-a6ebba923997",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "content": "## Test che la versione non sia cambiata\nControlla che non sia cambiata la versione del sito ed eventualmente invia una email",
+        "height": 80,
+        "width": 608
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -960,
+        -464
+      ],
+      "typeVersion": 1,
+      "id": "8e4f02c0-3215-45cc-8c41-b52956832675",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Impostazioni variabili applicazione",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Impostazioni variabili applicazione": {
+      "main": [
+        [
+          {
+            "node": "Controllo cambio versione",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Controllo cambio versione": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ef87ac8a-b62d-4067-93e1-6a00d2abdf63",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4a86676d77aab6433303a48c2775b14bd4b100d9fe19c4ea7bca4b124eb7ef59"
+  },
+  "id": "zEId5QQrUJoOvQ1j",
+  "tags": [
+    {
+      "name": "CQOP",
+      "id": "TG7yYKAbIwlQJ4Yg",
+      "createdAt": "2025-08-01T14:30:22.580Z",
+      "updatedAt": "2025-08-01T14:30:22.580Z"
+    }
+  ]
+}

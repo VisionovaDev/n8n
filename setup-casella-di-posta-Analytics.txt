@@ -1,0 +1,2 @@
+Aggiungere l'etichetta "Report Zato per n8n"
+Creare il filtro per cui ai messaggi con oggetto "Statistiche di invio comunicazioni email marketing Zato" e che hanno l'allegato si applica la label "Report Zato per n8n"

@@ -1,0 +1,125 @@
+{
+  "name": "Zato salva report in GDrive",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "labelIds": [
+            "Label_2815620201209520411"
+          ],
+          "q": "has:attachment"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "id": "36c89351-0cf2-4b6f-942d-6f4da22ded19",
+      "name": "Trigger - New Email",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "position": [
+        -240,
+        -176
+      ],
+      "notesInFlow": true,
+      "typeVersion": 1.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LQRAmDuXLnERJlMm",
+          "name": "Gmail account"
+        }
+      },
+      "notes": "has:attachment"
+    },
+    {
+      "parameters": {
+        "name": "={{ $json.fileName.split(\".\")[0] + \"-\" + $('Trigger - New Email').item.json.from.value[0].address + \".\" + $json.fileName.split(\".\")[1]}}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1UdXH-PvMyULCWMzTBaadLVm-mvqhSJwV",
+          "mode": "list",
+          "cachedResultName": "REPORT INVII",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1UdXH-PvMyULCWMzTBaadLVm-mvqhSJwV"
+        },
+        "options": {}
+      },
+      "id": "c83e66cf-ba9e-49f9-b2cd-ab3ad170e9d2",
+      "name": "upload files to google drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        224,
+        -176
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "pJYsuLDwutF70wSz",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let results = [];\n\nfor (item of items) {\n    for (key of Object.keys(item.binary)) {\n        results.push({\n            json: {\n                fileName: item.binary[key].fileName\n            },\n            binary: {\n                data: item.binary[key],\n            }\n        });\n    }\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        -176
+      ],
+      "id": "2cf1e96c-8ce1-4b36-b069-4f86fbc1986a",
+      "name": "Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Trigger - New Email": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "upload files to google drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7845ca0f-ad84-40bf-8e14-f92bebba8017",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4a86676d77aab6433303a48c2775b14bd4b100d9fe19c4ea7bca4b124eb7ef59"
+  },
+  "id": "22cU7O2x3KILzW30",
+  "tags": []
+}

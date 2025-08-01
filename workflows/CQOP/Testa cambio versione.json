@@ -3,15 +3,15 @@
   "nodes": [
     {
       "parameters": {
-        "jsCode": "const puppeteer = require('puppeteer');\n\n// Leggi l'input dal nodo precedente (rimuovi eventuali spazi nel nome della chiave)\nconst url = $input.first().json[\"startingUrl \"]  || 'https://default-url.it';\nconst versionePrevista=$input.first().json.versionePrevista;\n\n// 1) Se non esiste ancora, lancio Chromium e lo memorizzo in global.browser\n//nei nodi successivi questa parte di creazione non serve\nif (!global.browser) {\n  global.browser = await puppeteer.launch({\n    executablePath: '/usr/bin/chromium-browser',\n    headless: true,\n    args: ['--no-sandbox', '--disable-setuid-sandbox'],\n  });\n}\n\n// 2) Creo la variabile locale browser per uniformità con i nodi “Run” e “Close”\nconst browser = global.browser;\n\npage = await browser.newPage();\n\n// 1) Carico la pagina e aspetto \"network idle\"\nawait page.goto(url, {\n  waitUntil: 'networkidle0',\n  timeout: $input.first().json.browserTimeoutInMillSeconds\n});\n\n// 2) Aspetto che nel body compaia il pattern Vx.y.z\nawait page.waitForFunction(\n  () => /V\\d+\\.\\d+\\.\\d+/.test(document.body.innerText),\n  { timeout: 60000 }\n);\n\n// 3) Estraggo la versione con un unico evaluate che usa document.evaluate()\nconst versioneTrovata = await page.evaluate(() => {\n  const xpath = \"//p[contains(text(),'V') and contains(text(),'.')]\";\n  const node = document\n    .evaluate(\n      xpath,\n      document,\n      null,\n      XPathResult.FIRST_ORDERED_NODE_TYPE,\n      null\n    )\n    .singleNodeValue;\n  return node ? node.textContent.trim() : 'Versione non trovata';\n});\n\nawait browser.close(); //questo non sarà da fare quando si eseguiranno gli altri nodi\n\n// 6) Ritorna il risultato confrontando con la versione prevista\nreturn [\n  {\n    json: {\n      url,\n      versionePrevista,\n      versioneTrovata: versioneTrovata || 'Versione non trovata',\n      isVersioneCorretta: versionePrevista === versioneTrovata,\n    },\n  },\n]\n"
+        "jsCode": "const puppeteer = require('puppeteer');\n\n// Leggi l'input dal nodo precedente (rimuovi eventuali spazi nel nome della chiave)\nconst url = $input.first().json[\"startingUrl \"]  || 'https://default-url.it';\nconst versionePrevista=$input.first().json.versionePrevista;\n\n// 1) Se non esiste ancora, lancio Chromium e lo memorizzo in global.browser\n//nei nodi successivi questa parte di creazione non serve\nif (!global.browser) {\n  global.browser = await puppeteer.launch({\n    executablePath: '/usr/bin/chromium-browser',\n    headless: true,\n    args: ['--no-sandbox', '--disable-setuid-sandbox'],\n  });\n}\n\n// 2) Creo la variabile locale browser per uniformità con i nodi “Run” e “Close”\nconst browser = global.browser;\n\npage = await browser.newPage();\n\n// 1) Carico la pagina e aspetto \"network idle\"\nawait page.goto(url, {\n  waitUntil: 'networkidle0',\n  timeout: $input.first().json.browserTimeoutInMillSeconds\n});\n\n// 2) Aspetto che nel body compaia il pattern Vx.y.z\nawait page.waitForFunction(\n  () => /V\\d+\\.\\d+\\.\\d+/.test(document.body.innerText),\n  { timeout: $input.first().json.browserTimeoutInMillSeconds }\n);\n\n// 3) Estraggo la versione con un unico evaluate che usa document.evaluate()\nconst versioneTrovata = await page.evaluate(() => {\n  const xpath = \"//p[contains(text(),'V') and contains(text(),'.')]\";\n  const node = document\n    .evaluate(\n      xpath,\n      document,\n      null,\n      XPathResult.FIRST_ORDERED_NODE_TYPE,\n      null\n    )\n    .singleNodeValue;\n  return node ? node.textContent.trim() : 'Versione non trovata';\n});\n\nawait browser.close(); //questo non sarà da fare quando si eseguiranno gli altri nodi\n\n// 6) Ritorna il risultato confrontando con la versione prevista\nreturn [\n  {\n    json: {\n      url,\n      versionePrevista,\n      versioneTrovata: versioneTrovata || 'Versione non trovata',\n      isVersioneCorretta: versionePrevista === versioneTrovata,\n    },\n  },\n]\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -560,
-        -336
+        400,
+        128
       ],
-      "id": "0b701627-a8d5-4399-8b79-2ab5ee119612",
+      "id": "ab842890-0495-4e1d-bbf4-25f33d4a7bf2",
       "name": "Controllo cambio versione"
     },
     {
@@ -43,10 +43,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -768,
-        -336
+        192,
+        128
       ],
-      "id": "b59a0f61-b2f9-4b3e-a2f8-ef3d069e94e7",
+      "id": "c8877875-f5a4-4065-9fab-6518010a787a",
       "name": "Impostazioni variabili applicazione"
     },
     {
@@ -61,16 +61,16 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        -64,
-        -320
+        896,
+        144
       ],
-      "id": "ecd2b597-b912-4025-9b1c-0db53e710d87",
+      "id": "791d28d0-67c3-41a8-a99e-6be8803f0570",
       "name": "Send email",
       "webhookId": "22b3412d-e98e-412c-90ce-c846f75ef055",
       "credentials": {
         "smtp": {
-          "id": "ex7wvHAzhysSwHdx",
-          "name": "SMTP AuthSmtp"
+          "id": "rWBfy9lqSSp2RSPT",
+          "name": "SMTP account"
         }
       }
     },
@@ -102,10 +102,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -368,
-        -336
+        592,
+        128
       ],
-      "id": "7481c357-5432-4d48-932a-a6ebba923997",
+      "id": "218fdfe3-ef88-41d4-9ffe-4f3913979b80",
       "name": "If"
     },
     {
@@ -116,11 +116,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -960,
-        -464
+        0,
+        0
       ],
       "typeVersion": 1,
-      "id": "8e4f02c0-3215-45cc-8c41-b52956832675",
+      "id": "3bc0fa45-4592-48e0-8679-b756545731d6",
       "name": "Sticky Note"
     },
     {
@@ -128,7 +128,7 @@
         "rule": {
           "interval": [
             {
-              "triggerAtHour": 17
+              "triggerAtHour": 7
             }
           ]
         }
@@ -136,10 +136,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -960,
-        -336
+        0,
+        128
       ],
-      "id": "0adac1eb-7419-4cd0-ba63-286d83a4f4e2",
+      "id": "d723a971-995a-496a-82b2-cf852e227774",
       "name": "Schedule Trigger"
     }
   ],
@@ -195,18 +195,18 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "e5ee1a68-0660-4658-af99-59d0bbf63bfe",
+  "versionId": "5f865781-0449-4d75-8110-b57a782a38d9",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4a86676d77aab6433303a48c2775b14bd4b100d9fe19c4ea7bca4b124eb7ef59"
   },
-  "id": "zEId5QQrUJoOvQ1j",
+  "id": "Zbnu7zPeHZJk4PxN",
   "tags": [
     {
-      "name": "CQOP",
-      "id": "TG7yYKAbIwlQJ4Yg",
-      "createdAt": "2025-08-01T14:30:22.580Z",
-      "updatedAt": "2025-08-01T14:30:22.580Z"
+      "createdAt": "2025-08-01T15:32:44.868Z",
+      "updatedAt": "2025-08-01T15:32:44.868Z",
+      "id": "SPKwEsnnurYd41Mx",
+      "name": "CQOP"
     }
   ]
 }

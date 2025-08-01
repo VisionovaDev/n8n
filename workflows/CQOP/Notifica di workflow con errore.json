@@ -1,0 +1,64 @@
+{
+  "name": "Notifica di workflow con errore",
+  "nodes": [
+    {
+      "parameters": {
+        "fromEmail": "dev@visionova.it",
+        "toEmail": "webmaster@visionova.it",
+        "subject": "Errore in {{$json.workflowName}}",
+        "emailFormat": "text",
+        "text": "❌ Workflow: {{$json.workflowName}} (ID: {{$json.workflowId}})\n📅 Ora: {{new Date().toLocaleString()}}\n📝 Errore: {{$json.error.message}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        16,
+        192
+      ],
+      "id": "887f70b2-666d-4d04-9211-27aa59f798a5",
+      "name": "Send email",
+      "webhookId": "7823be00-d3a1-47e0-9256-ccf172797e59",
+      "credentials": {
+        "smtp": {
+          "id": "rWBfy9lqSSp2RSPT",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Utilizzato per notificare l'errore nel workflow",
+        "width": 624
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "9ed13586-1779-4fef-b491-2968d47047e3",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bc9b8a54-f0da-4744-82e2-129c71412c50",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4a86676d77aab6433303a48c2775b14bd4b100d9fe19c4ea7bca4b124eb7ef59"
+  },
+  "id": "9y2laVor3ZR0JnQt",
+  "tags": [
+    {
+      "createdAt": "2025-08-01T15:32:44.868Z",
+      "updatedAt": "2025-08-01T15:32:44.868Z",
+      "id": "SPKwEsnnurYd41Mx",
+      "name": "CQOP"
+    }
+  ]
+}

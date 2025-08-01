@@ -3,7 +3,7 @@ FROM n8nio/n8n
 USER root
 
 # Installa Chromium e dipendenze su Alpine
-RUN apk update && apk add --no-cache \
+RUN apk update && apk add --no-cache \  
     chromium \
     nss \
     freetype \
@@ -11,7 +11,9 @@ RUN apk update && apk add --no-cache \
     ca-certificates \
     ttf-freefont \
     nodejs \
-    npm
+    npm \
+    curl \
+    openssl
 
 # Crea directory e assegna permessi a node
 RUN mkdir -p /data && chown node:node /data

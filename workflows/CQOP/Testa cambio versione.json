@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "jsCode": "const puppeteer = require('puppeteer');\n\n// Leggi l'input dal nodo precedente (rimuovi eventuali spazi nel nome della chiave)\nconst url = $input.first().json[\"startingUrl \"]  || 'https://default-url.it';\nconst versionePrevista=$input.first().json.versionePrevista;\n\n// 1) Se non esiste ancora, lancio Chromium e lo memorizzo in global.browser\n//nei nodi successivi questa parte di creazione non serve\nif (!global.browser) {\n  global.browser = await puppeteer.launch({\n    executablePath: '/usr/bin/chromium-browser',\n    headless: true,\n    args: ['--no-sandbox', '--disable-setuid-sandbox'],\n  });\n}\n\n// 2) Creo la variabile locale browser per uniformità con i nodi “Run” e “Close”\nconst browser = global.browser;\n\npage = await browser.newPage();\n\n// 1) Carico la pagina e aspetto \"network idle\"\nawait page.goto(url, {\n  waitUntil: 'networkidle0',\n  timeout: $input.first().json.browserTimeoutInMillSeconds\n});\n\n// 2) Aspetto che nel body compaia il pattern Vx.y.z\nawait page.waitForFunction(\n  () => /V\\d+\\.\\d+\\.\\d+/.test(document.body.innerText),\n  { timeout: $input.first().json.browserTimeoutInMillSeconds }\n);\n\n// 3) Estraggo la versione con un unico evaluate che usa document.evaluate()\nconst versioneTrovata = await page.evaluate(() => {\n  const xpath = \"//p[contains(text(),'V') and contains(text(),'.')]\";\n  const node = document\n    .evaluate(\n      xpath,\n      document,\n      null,\n      XPathResult.FIRST_ORDERED_NODE_TYPE,\n      null\n    )\n    .singleNodeValue;\n  return node ? node.textContent.trim() : 'Versione non trovata';\n});\n\nawait browser.close(); //questo non sarà da fare quando si eseguiranno gli altri nodi\n\n// 6) Ritorna il risultato confrontando con la versione prevista\nreturn [\n  {\n    json: {\n      url,\n      versionePrevista,\n      versioneTrovata: versioneTrovata || 'Versione non trovata',\n      isVersioneCorretta: versionePrevista === versioneTrovata,\n    },\n  },\n]\n"
+        "jsCode": "const puppeteer = require('puppeteer');\n\n// Leggi l'input dal nodo precedente (rimuovi eventuali spazi nel nome della chiave)\nconst url = $input.first().json[\"startingUrl\"]  || 'https://default-url.it';\nconst versionePrevista=$input.first().json.versionePrevista;\n\n// 1) Se non esiste ancora, lancio Chromium e lo memorizzo in global.browser\n//nei nodi successivi questa parte di creazione non serve\nif (!global.browser) {\n  global.browser = await puppeteer.launch({\n    executablePath: '/usr/bin/chromium-browser',\n    headless: true,\n    args: ['--no-sandbox', '--disable-setuid-sandbox'],\n  });\n}\n\n// 2) Creo la variabile locale browser per uniformità con i nodi “Run” e “Close”\nconst browser = global.browser;\n\npage = await browser.newPage();\nglobal.page = page; \n\n// 1) Carico la pagina e aspetto \"network idle\"\nawait page.goto(url, {\n  waitUntil: 'networkidle2',\n  timeout: $input.first().json.browserTimeoutInMillSeconds\n});\n\n// 2) Aspetto che nel body compaia il pattern Vx.y.z\nawait page.waitForFunction(\n  () => /V\\d+\\.\\d+\\.\\d+/.test(document.body.innerText),\n  { timeout: $input.first().json.browserTimeoutInMillSeconds }\n);\n\n// 3) Estraggo la versione con un unico evaluate che usa document.evaluate()\nconst versioneTrovata = await page.evaluate(() => {\n  const xpath = \"//p[contains(text(),'V') and contains(text(),'.')]\";\n  const node = document\n    .evaluate(\n      xpath,\n      document,\n      null,\n      XPathResult.FIRST_ORDERED_NODE_TYPE,\n      null\n    )\n    .singleNodeValue;\n  return node ? node.textContent.trim() : 'Versione non trovata';\n});\n\n//await browser.close(); //questo non sarà da fare quando si eseguiranno gli altri nodi\n\n// 6) Ritorna il risultato confrontando con la versione prevista\nreturn [\n  {\n    json: {\n      url,\n      versionePrevista,\n      versioneTrovata: versioneTrovata || 'Versione non trovata',\n      isVersioneCorretta: versionePrevista === versioneTrovata,\n    },\n  },\n]\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -20,7 +20,7 @@
           "assignments": [
             {
               "id": "1de3f90a-9304-4e51-8114-55ff2841ffbd",
-              "name": "startingUrl ",
+              "name": "startingUrl",
               "value": "https://servizi.anticorruzione.it/RicercaAttestazioniWebApp/",
               "type": "string"
             },
@@ -61,8 +61,8 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        896,
-        144
+        1168,
+        208
       ],
       "id": "791d28d0-67c3-41a8-a99e-6be8803f0570",
       "name": "Send email",
@@ -102,7 +102,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        592,
+        880,
         128
       ],
       "id": "218fdfe3-ef88-41d4-9ffe-4f3913979b80",
@@ -141,6 +141,19 @@
       ],
       "id": "d723a971-995a-496a-82b2-cf852e227774",
       "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "if (global.browser) {\n  await global.browser.close();\n  global.browser = undefined;\n}\n\n// Recupera gli item in ingresso\nconst items = $input.all();\n\n// Ritorna gli item così come sono\nreturn items;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        128
+      ],
+      "id": "1cd92782-7081-4a95-b14e-a08a319d15b9",
+      "name": "chiude il browser"
     }
   ],
   "pinData": {},
@@ -160,7 +173,7 @@
       "main": [
         [
           {
-            "node": "If",
+            "node": "chiude il browser",
             "type": "main",
             "index": 0
           }
@@ -189,13 +202,27 @@
           }
         ]
       ]
+    },
+    "chiude il browser": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "timezone": "Europe/Rome",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "9y2laVor3ZR0JnQt"
   },
-  "versionId": "5f865781-0449-4d75-8110-b57a782a38d9",
+  "versionId": "e7c1913e-f6c2-42ed-9d4a-c480750bb45e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4a86676d77aab6433303a48c2775b14bd4b100d9fe19c4ea7bca4b124eb7ef59"

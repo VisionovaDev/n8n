@@ -1,5 +1,6 @@
 services:
   postgres:
+    container_name: postgres
     image: postgres:16
     restart: always
     environment:
@@ -16,10 +17,35 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-  n8n:
+    networks:
+      n8n-network:
+
+  browserless:
+    container_name: browserless
+    image: ghcr.io/browserless/chromium
+
+    ports:
+      - "3000:3000"
+    environment:
+      - TOKEN=6R0W53R135510      
+    # healthcheck:
+    #   # Esegue un test con curl all'interno del container browserless per verificare
+    #   # che il servizio sia pronto a ricevere connessioni.
+    #   # L'endpoint /json/version è ideale per questo scopo.
+    #   test: ["CMD-SHELL", "curl -f \"http://localhost:3000/json/version?token=$${TOKEN}\""]
+    #   interval: 10s  # Controlla ogni 10 secondi
+    #   timeout: 5s    # Il test deve rispondere entro 5 secondi
+    #   retries: 5     # Tenta 5 volte prima di marcare come "unhealthy"
+    networks:
+      n8n-network:
+        # Assegniamo un IP fisso
+        ipv4_address: 172.25.0.5
+
+  server-n8n:
+    container_name: server-n8n
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile   
     environment:
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres
@@ -34,15 +60,26 @@ services:
       - N8N_PORT=5678    
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
       - WEBHOOK_URL=http://localhost:5678
-      - NODE_FUNCTION_ALLOW_EXTERNAL=puppeteer
       - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser      
+      - PUPPETEER_ENDPOINT=ws://172.25.0.5:3000?token=6R0W53R135510      
     ports:
-      - "5678:5678"
-    links:
-      - postgres
+      - "5678:5678" 
     volumes:
       - ./n8n_data:/home/node/.n8n
     depends_on:
       postgres:
         condition: service_healthy
+      browserless:
+        condition: service_started
+    networks:
+      n8n-network:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+# Definiamo la subnet per la nostra rete per poter usare IP statici
+networks:
+  n8n-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/24

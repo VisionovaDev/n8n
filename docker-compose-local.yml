@@ -23,19 +23,10 @@ services:
   browserless:
     container_name: browserless
     image: ghcr.io/browserless/chromium
-
     ports:
       - "3000:3000"
     environment:
-      - TOKEN=6R0W53R135510      
-    # healthcheck:
-    #   # Esegue un test con curl all'interno del container browserless per verificare
-    #   # che il servizio sia pronto a ricevere connessioni.
-    #   # L'endpoint /json/version è ideale per questo scopo.
-    #   test: ["CMD-SHELL", "curl -f \"http://localhost:3000/json/version?token=$${TOKEN}\""]
-    #   interval: 10s  # Controlla ogni 10 secondi
-    #   timeout: 5s    # Il test deve rispondere entro 5 secondi
-    #   retries: 5     # Tenta 5 volte prima di marcare come "unhealthy"
+      - TOKEN=${TOKEN}
     networks:
       n8n-network:
         # Assegniamo un IP fisso
@@ -61,7 +52,7 @@ services:
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
       - WEBHOOK_URL=http://localhost:5678
       - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-      - PUPPETEER_ENDPOINT=ws://172.25.0.5:3000?token=6R0W53R135510      
+      - PUPPETEER_ENDPOINT=ws://172.25.0.5:3000?token=${TOKEN}
     ports:
       - "5678:5678" 
     volumes:
